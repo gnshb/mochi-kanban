@@ -104,7 +104,7 @@ class WidgetSettingsActivity : ComponentActivity() {
                                     if (value != null) {
                                         lifecycleScope.launch {
                                             widgetPrefs.setOpacity(value)
-                                            widgetUpdater.refresh()
+                                            widgetUpdater.refreshNow()
                                         }
                                     }
                                 },

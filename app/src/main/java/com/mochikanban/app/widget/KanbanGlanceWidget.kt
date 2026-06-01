@@ -35,6 +35,7 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
+import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.mochikanban.app.MainActivity
@@ -250,7 +251,11 @@ private fun WidgetRow(
         ) {
             Text(
                 text = card.title,
-                style = TextStyle(color = InkLight, fontSize = 14.sp),
+                style = TextStyle(
+                    color = if (completing) Muted else InkLight,
+                    fontSize = 14.sp,
+                    textDecoration = if (completing) TextDecoration.LineThrough else null,
+                ),
                 maxLines = 1,
             )
         }

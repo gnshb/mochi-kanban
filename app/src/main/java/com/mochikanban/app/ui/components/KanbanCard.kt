@@ -48,7 +48,8 @@ fun KanbanCard(
     modifier: Modifier = Modifier,
     elevated: Boolean = false,
 ) {
-    val isDone = card.column == KanbanColumn.DONE
+    // Use the clock-driven column so dated cards that have ended also read as done.
+    val isDone = card.effectiveColumn(System.currentTimeMillis()) == KanbanColumn.DONE
     val container = DarkTokens.SurfaceVariant
     val checklist = ChecklistCodec.decode(card.checklist)
 
