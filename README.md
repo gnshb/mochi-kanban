@@ -1,14 +1,14 @@
 # 🍡 Mochi Kanban
 
 A kawaii, open-source Android kanban board with two-way Google
-Calendar sync. Cards flow To do → Doing → Done by the clock, dated events stay in
-step with your calendar, and a home-screen widget keeps today's list a tap away.
+Calendar sync. Usual Kanban To do → Doing → Done decks, dated events stay in
+sync with your gcalendar, and a home-screen widget keeps today's list a tap away.
 Reminders fire with Complete/Snooze, and you can type dates right into a title
 ("lunch tomorrow 15:00") and they're parsed automatically.
 
 <p align="center">
   <img src="img/sample1.png" alt="Kanban board" width="240">
-  <img src="img/sample2.png" alt="Card editor" width="240">
+  <img src="img/sample2.png" alt="Google Calendar settings" width="240">
   <img src="img/sample3.png" alt="Home-screen widget" width="240">
 </p>
 
