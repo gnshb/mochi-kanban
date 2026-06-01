@@ -1,15 +1,31 @@
 # 🍡 Mochi Kanban
 
-A kawaii, offline-first, open-source Android kanban board with two-way Google
+A kawaii, open-source Android kanban board with two-way Google
 Calendar sync. Cards flow To do → Doing → Done by the clock, dated events stay in
 step with your calendar, and a home-screen widget keeps today's list a tap away.
 Reminders fire with Complete/Snooze, and you can type dates right into a title
 ("lunch tomorrow 15:00") and they're parsed automatically.
 
+<p align="center">
+  <img src="img/sample1.png" alt="Kanban board" width="240">
+  <img src="img/sample2.png" alt="Card editor" width="240">
+  <img src="img/sample3.png" alt="Home-screen widget" width="240">
+</p>
+
 ## Install
 
 Download the latest signed APK from the
 [Releases page](https://github.com/gnshb/mochi-kanban/releases).
+
+## Google sign-in
+
+The prebuilt APK's Google sign-in only works for accounts I've added as **test
+users** — this is a Google restriction: an OAuth app with the sensitive Calendar
+scope can't be used by arbitrary accounts until it passes Google's verification.
+
+If you want Calendar sync on your own account, **build from source with your own
+OAuth Web client ID** (see below). Everything except Calendar sync works without
+any of this.
 
 ## Build from source
 
