@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Mochi blob (soft circle, slight squish) -->
+    <path
+        android:fillColor="#F5EFE6"
+        android:pathData="M54,28
+                          C70,28 80,38 80,54
+                          C80,70 70,80 54,80
+                          C38,80 28,70 28,54
+                          C28,38 38,28 54,28 Z" />
+
+    <!-- Soft pink blush, left -->
+    <path
+        android:fillColor="#FFB4C4"
+        android:fillAlpha="0.8"
+        android:pathData="M40,60 m-5,0 a5,3 0 1 0 10,0 a5,3 0 1 0 -10,0" />
+    <!-- Soft pink blush, right -->
+    <path
+        android:fillColor="#FFB4C4"
+        android:fillAlpha="0.8"
+        android:pathData="M68,60 m-5,0 a5,3 0 1 0 10,0 a5,3 0 1 0 -10,0" />
+
+    <!-- Eyes -->
+    <path
+        android:fillColor="#1A1118"
+        android:pathData="M44,53 m-2,0 a2,2.5 0 1 0 4,0 a2,2.5 0 1 0 -4,0" />
+    <path
+        android:fillColor="#1A1118"
+        android:pathData="M64,53 m-2,0 a2,2.5 0 1 0 4,0 a2,2.5 0 1 0 -4,0" />
+
+    <!-- Tiny smile -->
+    <path
+        android:strokeColor="#1A1118"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M51,64 Q54,67 57,64" />
+
+    <!-- Kanban dots inside, three lit columns -->
+    <path android:fillColor="#86E7BF" android:pathData="M43,72 m-1.5,0 a1.5,1.5 0 1 0 3,0 a1.5,1.5 0 1 0 -3,0" />
+    <path android:fillColor="#F6BE4B" android:pathData="M54,72 m-1.5,0 a1.5,1.5 0 1 0 3,0 a1.5,1.5 0 1 0 -3,0" />
+    <path android:fillColor="#B6D0FF" android:pathData="M65,72 m-1.5,0 a1.5,1.5 0 1 0 3,0 a1.5,1.5 0 1 0 -3,0" />
+</vector>

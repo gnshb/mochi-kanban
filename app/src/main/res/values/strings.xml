@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mochi Kanban</string>
+    <string name="widget_name">Mochi Board</string>
+    <string name="widget_description">Today\'s kanban board</string>
+    <string name="reminder_channel_name">Reminders</string>
+    <string name="reminder_channel_description">Card reminder notifications</string>
+    <string name="reauth_channel_name">Sign-in</string>
+    <string name="reauth_channel_description">Google account reauthentication prompts</string>
+</resources>

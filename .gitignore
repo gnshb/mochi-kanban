@@ -1,0 +1,47 @@
+# Android / Gradle
+.gradle/
+build/
+**/build/
+.externalNativeBuild/
+.cxx/
+captures/
+
+# IDE
+.idea/
+*.iml
+local.properties
+
+# SDKs
+Android/Sdk/
+android-sdk/
+
+# Signing material
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+.env
+.env.*
+!.env.example
+release/
+dist/
+*.apk
+*.aab
+
+# Logs
+*.log
+*.hprof
+reports/
+test-results/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# AI scratch
+.agents/
+.codex/
+.claude/
+.kotlin/

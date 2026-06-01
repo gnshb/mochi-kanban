@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mochi_background">#000000</color>
+    <color name="mochi_surface">#0F0D11</color>
+    <color name="mochi_ink_light">#FFF6ED</color>
+    <color name="mochi_mint">#86E7BF</color>
+</resources>
