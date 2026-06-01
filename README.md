@@ -8,7 +8,7 @@ Reminders fire with Complete/Snooze, and you can type dates right into a title
 
 <p align="center">
   <img src="img/sample1.png" alt="Kanban board" width="240">
-  <img src="img/sample2.png" alt="Google Calendar settings" width="240">
+  <img src="img/sample2-settings.png" alt="Google Calendar settings" width="240">
   <img src="img/sample3.png" alt="Home-screen widget" width="240">
 </p>
 
