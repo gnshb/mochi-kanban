@@ -30,6 +30,11 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.2
+
+- Fixed duplicate calendar events from rapid edits before the first sync.
+- All-day calendar events now resolve to local 00:00.
+
 ### v0.1.1
 
 - Reworked the widget for reliability: instant complete, awaited refresh after every change, and a working background-opacity control.
