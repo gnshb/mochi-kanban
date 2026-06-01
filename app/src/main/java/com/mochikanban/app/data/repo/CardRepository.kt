@@ -53,6 +53,9 @@ class CardRepository @Inject constructor(
         )
         cardDao.upsert(toSave)
         if (!fromSync) {
+            // One pending push per card — collapse repeated edits so we never queue
+            // two CREATEs and end up with duplicate calendar events.
+            outboxDao.deleteByCard(toSave.id)
             outboxDao.enqueue(
                 OutboxEntity(
                     cardId = toSave.id,

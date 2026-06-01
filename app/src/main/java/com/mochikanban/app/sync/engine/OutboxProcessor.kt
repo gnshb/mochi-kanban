@@ -48,9 +48,17 @@ class OutboxProcessor @Inject constructor(
 
             try {
                 when (entry.opType) {
-                    OpType.CREATE -> {
+                    // Create and update are keyed off remoteEventId, not the stored op:
+                    // once a card has a remote id we PATCH, so duplicate CREATE entries
+                    // (queued by edits before the first sync) can't create extra events.
+                    OpType.CREATE, OpType.UPDATE -> {
                         val dto = eventMapper.toRemote(card)
-                        val resp = api.createEvent(authHeader, calendar.id, dto)
+                        val eventId = card.remoteEventId
+                        val resp = if (eventId == null) {
+                            api.createEvent(authHeader, calendar.id, dto)
+                        } else {
+                            api.patchEvent(authHeader, calendar.id, eventId, dto)
+                        }
                         if (resp.isSuccessful) {
                             val body = resp.body()
                             cardDao.update(
@@ -63,26 +71,7 @@ class OutboxProcessor @Inject constructor(
                                 )
                             )
                             outboxDao.delete(entry)
-                        } else handleFailure(entry, "create ${resp.code()}")
-                    }
-                    OpType.UPDATE -> {
-                        val eventId = card.remoteEventId
-                        if (eventId == null) {
-                            outboxDao.update(entry.copy(opType = OpType.CREATE))
-                            continue
-                        }
-                        val dto = eventMapper.toRemote(card)
-                        val resp = api.patchEvent(authHeader, calendar.id, eventId, dto)
-                        if (resp.isSuccessful) {
-                            cardDao.update(
-                                card.copy(
-                                    etag = resp.body()?.etag,
-                                    dirty = false,
-                                    syncState = SyncState.IDLE,
-                                )
-                            )
-                            outboxDao.delete(entry)
-                        } else handleFailure(entry, "update ${resp.code()}")
+                        } else handleFailure(entry, "push ${resp.code()}")
                     }
                     OpType.DELETE -> {
                         val eventId = card.remoteEventId

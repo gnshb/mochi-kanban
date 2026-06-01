@@ -149,8 +149,11 @@ class EventMapper @Inject constructor(
         OffsetDateTime.parse(value).toInstant().toEpochMilli()
     }.recoverCatching { Instant.parse(value).toEpochMilli() }.getOrNull()
 
+    // All-day events have a `date` (no time); place them at local 00:00.
     private fun parseDate(value: String): Long? = runCatching {
-        java.time.LocalDate.parse(value).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        java.time.LocalDate.parse(value)
+            .atStartOfDay(java.time.ZoneId.systemDefault())
+            .toInstant().toEpochMilli()
     }.getOrNull()
 
     companion object {
