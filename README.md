@@ -46,6 +46,14 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.6
+
+- Keep active timed cards visible and glowing in the widget To do list until their scheduled end.
+- Serialize widget renders and add a short follow-up render after app writes so stale widget updates cannot win.
+- Make rendered label colors lighter and softer while preserving exact Google Calendar color values for sync.
+- Hide and de-duplicate internal calendar color labels from app label pickers.
+- Refresh the widget immediately after user label edits.
+
 ### v0.1.5
 
 - Hide all-day Google Calendar events from the board and widget.

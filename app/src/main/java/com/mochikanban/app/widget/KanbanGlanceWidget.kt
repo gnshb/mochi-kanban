@@ -26,7 +26,6 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
-import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -45,7 +44,6 @@ import com.mochikanban.app.data.db.entity.CardEntity
 import com.mochikanban.app.data.db.entity.LabelEntity
 import com.mochikanban.app.data.repo.LabelRepository
 import com.mochikanban.app.domain.GoogleCalendarColors
-import com.mochikanban.app.domain.Column as KanbanColumn
 import com.mochikanban.app.ui.theme.DarkTokens
 import com.mochikanban.app.ui.theme.glowTint
 import com.mochikanban.app.ui.theme.matteLabelColor
@@ -114,7 +112,7 @@ private fun ListWidget(
     val items = allCards
         .filterNot { it.isScheduledBefore(todayStart) }
         .filterNot { it.isLikelyLegacyAllDayImport() }
-        .filter { it.effectiveColumn(now) == KanbanColumn.TODO }
+        .filter { it.isWidgetTodoVisible(now) }
         .sortedWith(
             compareBy<CardEntity> { it.todoSortBucket(now) }
                 .thenBy { it.startUtc ?: Long.MAX_VALUE }
@@ -210,8 +208,8 @@ private fun WidgetRow(
     val actionRequired = card.isActionRequired(now)
     val attentionWindow = card.isAttentionWindow(now)
     val rowBackground = when {
-        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.Error, 0.30f).copy(alpha = 0.88f)
-        attentionWindow -> DarkTokens.SurfaceVariant.glowTint(labelAccent, 0.34f).copy(alpha = 0.88f)
+        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.Error, 0.42f)
+        attentionWindow -> DarkTokens.SurfaceVariant.glowTint(labelAccent, 0.48f)
         else -> DarkTokens.Surface.copy(alpha = 0.72f)
     }
     val openCardKey = ActionParameters.Key<String>(

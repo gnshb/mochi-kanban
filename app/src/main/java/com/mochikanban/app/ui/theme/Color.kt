@@ -48,7 +48,7 @@ object DarkTokens {
 }
 
 fun Color.matteLabelColor(): Color =
-    lerp(this.copy(alpha = 1f), Color.White, 0.16f)
+    lerp(this.copy(alpha = 1f), Color.White, 0.34f)
 
 fun Color.glowTint(accent: Color, amount: Float): Color =
     lerp(this.copy(alpha = 1f), accent.copy(alpha = 1f), amount).copy(alpha = alpha)

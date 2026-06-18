@@ -82,6 +82,11 @@ data class CardEntity(
         else -> 2
     }
 
+    fun isWidgetTodoVisible(now: Long): Boolean {
+        if (column == Column.DONE || deletedLocal) return false
+        return isActionRequired(now) || isAttentionWindow(now) || effectiveColumn(now) == Column.TODO
+    }
+
     fun nextClockTransitionAfter(now: Long): Long? {
         if (column == Column.DONE) return null
         val start = startUtc ?: return null

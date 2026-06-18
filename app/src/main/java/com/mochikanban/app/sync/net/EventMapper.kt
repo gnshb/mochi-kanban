@@ -114,7 +114,7 @@ class EventMapper @Inject constructor(
         val existing = labelRepo.byName(name)
         if (existing != null) return existing.id
         val color = GoogleCalendarColors.normalizeHex(colorHex) ?: GoogleCalendarColors.defaultEventColor
-        return labelRepo.add(name, color).id
+        return labelRepo.add(name, color, refreshWidget = false).id
     }
 
     private fun parseRfc3339(value: String): Long? = runCatching {

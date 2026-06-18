@@ -46,7 +46,7 @@ class EditCardViewModel @Inject constructor(
     /** True while the start time was inferred from the title (vs. set by the user). */
     private var autoStart = false
 
-    val labels: StateFlow<List<LabelEntity>> = labelRepo.observe()
+    val labels: StateFlow<List<LabelEntity>> = labelRepo.observeVisible()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     fun loadFor(cardId: String?) {

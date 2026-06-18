@@ -3,7 +3,9 @@ package com.mochikanban.app.data.repo
 import com.mochikanban.app.data.db.dao.LabelDao
 import com.mochikanban.app.data.db.entity.LabelEntity
 import com.mochikanban.app.domain.GoogleCalendarColors
+import com.mochikanban.app.widget.WidgetUpdater
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -11,9 +13,12 @@ import javax.inject.Singleton
 @Singleton
 class LabelRepository @Inject constructor(
     private val labelDao: LabelDao,
+    private val widget: WidgetUpdater,
 ) {
     fun observe(): Flow<List<LabelEntity>> = labelDao.observe()
+    fun observeVisible(): Flow<List<LabelEntity>> = labelDao.observe().map { visibleLabels(it) }
     suspend fun all(): List<LabelEntity> = labelDao.all()
+    suspend fun visible(): List<LabelEntity> = visibleLabels(labelDao.all())
     suspend fun byId(id: String): LabelEntity? = labelDao.byId(id)
     suspend fun byName(name: String): LabelEntity? = labelDao.byName(name)
 
@@ -34,7 +39,7 @@ class LabelRepository @Inject constructor(
         labelDao.upsertAll(seeds)
     }
 
-    suspend fun add(name: String, colorHex: String): LabelEntity {
+    suspend fun add(name: String, colorHex: String, refreshWidget: Boolean = true): LabelEntity {
         val nextOrder = (all().maxOfOrNull { it.sortOrder } ?: -1) + 1
         val label = LabelEntity(
             id = UUID.randomUUID().toString(),
@@ -43,12 +48,19 @@ class LabelRepository @Inject constructor(
             sortOrder = nextOrder,
         )
         labelDao.upsert(label)
+        if (refreshWidget) widget.refresh()
         return label
     }
 
-    suspend fun update(label: LabelEntity) = labelDao.upsert(label)
+    suspend fun update(label: LabelEntity) {
+        labelDao.upsert(label)
+        widget.refresh()
+    }
 
-    suspend fun delete(id: String) = labelDao.deleteById(id)
+    suspend fun delete(id: String) {
+        labelDao.deleteById(id)
+        widget.refresh()
+    }
 
     /**
      * A hidden label that carries a calendar event's own colour. Deduped by colour
@@ -59,8 +71,13 @@ class LabelRepository @Inject constructor(
         val normalized = GoogleCalendarColors.normalizeHex(colorHex) ?: colorHex
         val name = EVENT_COLOR_LABEL_PREFIX + normalized.lowercase()
         byName(name)?.let { return it }
-        return add(name, normalized)
+        return add(name, normalized, refreshWidget = false)
     }
+
+    private fun visibleLabels(labels: List<LabelEntity>): List<LabelEntity> =
+        labels
+            .filterNot { it.name.startsWith(EVENT_COLOR_LABEL_PREFIX) }
+            .distinctBy { it.name.trim().lowercase() }
 
     private suspend fun migrateLegacyDefaultColors(labels: List<LabelEntity>) {
         val updates = labels.mapNotNull { label ->

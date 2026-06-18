@@ -41,6 +41,24 @@ class CardEntityTest {
     }
 
     @Test
+    fun widgetKeepsTimedCardVisibleThroughDoingWindow() {
+        val start = 10_000_000L
+        val card = card(startUtc = start, durationMin = 30)
+
+        assertEquals(Column.DOING, card.effectiveColumn(start + 10_000L))
+        assertTrue(card.isWidgetTodoVisible(start + 10_000L))
+        assertTrue(card.isWidgetTodoVisible(start + 31 * 60_000L))
+    }
+
+    @Test
+    fun widgetHidesDoneTimedCard() {
+        val start = 10_000_000L
+        val card = card(startUtc = start, durationMin = 30, column = Column.DONE)
+
+        assertFalse(card.isWidgetTodoVisible(start + 10_000L))
+    }
+
+    @Test
     fun scheduledCardBeforeTodayIsStale() {
         val card = card(startUtc = 10_000L, durationMin = 30)
         val dayStart = card.endUtc()!! + 1

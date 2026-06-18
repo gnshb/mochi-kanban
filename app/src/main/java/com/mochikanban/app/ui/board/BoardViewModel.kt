@@ -36,8 +36,7 @@ class BoardViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.Lazily, BoardUiState())
 
     // Palette excludes hidden per-account colour labels…
-    val labels: StateFlow<List<LabelEntity>> = labelRepo.observe()
-        .map { list -> list.filterNot { it.name.startsWith(LabelRepository.EVENT_COLOR_LABEL_PREFIX) } }
+    val labels: StateFlow<List<LabelEntity>> = labelRepo.observeVisible()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // …but the colour lookup keeps them, so account-coloured cards still resolve.
