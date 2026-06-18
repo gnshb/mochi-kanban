@@ -11,6 +11,7 @@ import com.mochikanban.app.reminders.MidnightCleanupWorker
 import com.mochikanban.app.reminders.NotificationChannels
 import com.mochikanban.app.sync.WorkManagerSyncTrigger
 import com.mochikanban.app.widget.WidgetRefreshWorker
+import com.mochikanban.app.widget.WidgetRefreshScheduler
 import dagger.hilt.android.HiltAndroidApp
 import java.time.Duration
 import java.time.LocalTime
@@ -28,6 +29,7 @@ class KanbanApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var syncTrigger: WorkManagerSyncTrigger
     @Inject lateinit var labelRepo: LabelRepository
+    @Inject lateinit var widgetRefreshScheduler: WidgetRefreshScheduler
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -38,9 +40,10 @@ class KanbanApplication : Application(), Configuration.Provider {
         scheduleWidgetRefresh()
         scheduleMidnightCleanup()
         appScope.launch { labelRepo.ensureDefaults() }
+        appScope.launch { widgetRefreshScheduler.scheduleNext() }
     }
 
-    /** Re-render the widget every 15 min (WorkManager's floor) so columns track the clock. */
+    /** Coarse fallback; exact one-shot widget refreshes are scheduled at task boundaries. */
     private fun scheduleWidgetRefresh() {
         val request = PeriodicWorkRequestBuilder<WidgetRefreshWorker>(15, TimeUnit.MINUTES).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(

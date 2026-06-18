@@ -13,6 +13,7 @@ import javax.inject.Singleton
 @Singleton
 class GlanceWidgetUpdater @Inject constructor(
     @ApplicationContext private val ctx: Context,
+    private val scheduler: WidgetRefreshScheduler,
 ) : WidgetUpdater {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -29,5 +30,6 @@ class GlanceWidgetUpdater @Inject constructor(
                 widget.update(ctx, id)
             }
         }
+        scheduler.scheduleNext()
     }
 }

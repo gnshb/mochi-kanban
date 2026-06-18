@@ -95,6 +95,7 @@ class KanbanGlanceWidget : GlanceAppWidget() {
 
 private val InkLight = ColorProvider(DarkTokens.Ink)
 private val Muted = ColorProvider(DarkTokens.Muted)
+private val Warning = ColorProvider(DarkTokens.Error)
 private val OutlineColor = ColorProvider(DarkTokens.Outline)
 private val DATE_FMT = DateTimeFormatter.ofPattern("MMM d")
 
@@ -108,7 +109,11 @@ private fun ListWidget(
     val now = System.currentTimeMillis()
     val items = allCards
         .filter { it.effectiveColumn(now) == KanbanColumn.TODO }
-        .sortedWith(compareBy({ it.startUtc ?: Long.MAX_VALUE }, { it.position }))
+        .sortedWith(
+            compareBy<CardEntity> { it.todoSortBucket(now) }
+                .thenBy { it.startUtc ?: Long.MAX_VALUE }
+                .thenBy { it.position },
+        )
 
     val bg = DarkTokens.Background.copy(alpha = opacity)
 
@@ -178,7 +183,7 @@ private fun ListWidget(
         } else {
             LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
                 items(items, itemId = { it.id.hashCode().toLong() }) { card ->
-                    WidgetRow(card, labelsById, completing = card.id == completingId)
+                    WidgetRow(card, labelsById, now = now, completing = card.id == completingId)
                 }
             }
         }
@@ -189,82 +194,110 @@ private fun ListWidget(
 private fun WidgetRow(
     card: CardEntity,
     labelsById: Map<String, LabelEntity>,
+    now: Long,
     completing: Boolean = false,
 ) {
-    val accent = HexColor.parseOr(
+    val labelAccent = HexColor.parseOr(
         card.labelId?.let { labelsById[it]?.colorHex },
         DarkTokens.Outline,
     )
-    Row(
+    val actionRequired = card.isActionRequired(now)
+    val attentionWindow = card.isAttentionWindow(now)
+    val accent = if (actionRequired) DarkTokens.Error else labelAccent
+    val glowAlpha = when {
+        actionRequired -> 0.24f
+        attentionWindow -> 0.18f
+        else -> 0f
+    }
+    Box(
         modifier = GlanceModifier
             .fillMaxWidth()
             // Inset from the right so the system scroll bar doesn't overlap the card.
             .padding(vertical = 4.dp)
             .padding(end = 12.dp)
             .cornerRadius(12.dp)
-            .background(ColorProvider(DarkTokens.Surface.copy(alpha = 0.6f)))
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .background(ColorProvider(accent.copy(alpha = glowAlpha)))
+            .padding(if (glowAlpha > 0f) 2.dp else 0.dp),
     ) {
-        // Left color stripe
-        Box(
+        Row(
             modifier = GlanceModifier
-                .width(4.dp)
-                .height(20.dp)
-                .cornerRadius(2.dp)
-                .background(ColorProvider(accent)),
-            content = {},
-        )
-        Spacer(GlanceModifier.width(8.dp))
-        // Tap-to-complete checkbox; fills with a check while completing.
-        Box(
-            modifier = GlanceModifier
-                .width(20.dp)
-                .height(20.dp)
-                .cornerRadius(6.dp)
-                .background(ColorProvider(if (completing) accent else accent.copy(alpha = 0.2f)))
-                .clickable(
-                    actionRunCallback<CompleteCardAction>(
-                        actionParametersOf(CompleteCardAction.KEY_CARD_ID to card.id)
-                    )
-                ),
-            contentAlignment = Alignment.Center,
+                .fillMaxWidth()
+                .cornerRadius(10.dp)
+                .background(ColorProvider(DarkTokens.Surface.copy(alpha = 0.6f)))
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (completing) {
+            // Left color stripe
+            Box(
+                modifier = GlanceModifier
+                    .width(4.dp)
+                    .height(20.dp)
+                    .cornerRadius(2.dp)
+                    .background(ColorProvider(accent)),
+                content = {},
+            )
+            Spacer(GlanceModifier.width(8.dp))
+            // Tap-to-complete checkbox; fills with a check while completing.
+            Box(
+                modifier = GlanceModifier
+                    .width(20.dp)
+                    .height(20.dp)
+                    .cornerRadius(6.dp)
+                    .background(ColorProvider(if (completing) accent else accent.copy(alpha = 0.2f)))
+                    .clickable(
+                        actionRunCallback<CompleteCardAction>(
+                            actionParametersOf(CompleteCardAction.KEY_CARD_ID to card.id)
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (completing) {
+                    Text(
+                        text = "✓",
+                        style = TextStyle(color = ColorProvider(DarkTokens.Background), fontSize = 13.sp),
+                    )
+                }
+            }
+            Spacer(GlanceModifier.width(10.dp))
+            Column(
+                modifier = GlanceModifier
+                    .defaultWeight()
+                    .clickable(
+                        actionStartActivity<MainActivity>(
+                            parameters = actionParametersOf(
+                                ActionParameters.Key<String>("cardId") to card.id,
+                            )
+                        )
+                    ),
+            ) {
                 Text(
-                    text = "✓",
-                    style = TextStyle(color = ColorProvider(DarkTokens.Background), fontSize = 13.sp),
+                    text = card.title,
+                    style = TextStyle(
+                        color = if (completing) Muted else InkLight,
+                        fontSize = 14.sp,
+                        textDecoration = if (completing) TextDecoration.LineThrough else null,
+                    ),
+                    maxLines = 1,
+                )
+                if (actionRequired) {
+                    Spacer(GlanceModifier.height(2.dp))
+                    Text(
+                        text = "Action required: finish or snooze",
+                        style = TextStyle(color = Warning, fontSize = 11.sp),
+                        maxLines = 1,
+                    )
+                }
+            }
+            Spacer(GlanceModifier.width(8.dp))
+            if (card.startUtc != null) {
+                Text(
+                    text = formatDate(card.startUtc),
+                    style = TextStyle(
+                        color = if (actionRequired) Warning else Muted,
+                        fontSize = 12.sp,
+                    ),
                 )
             }
-        }
-        Spacer(GlanceModifier.width(10.dp))
-        Column(
-            modifier = GlanceModifier
-                .defaultWeight()
-                .clickable(
-                    actionStartActivity<MainActivity>(
-                        parameters = actionParametersOf(
-                            ActionParameters.Key<String>("cardId") to card.id,
-                        )
-                    )
-                ),
-        ) {
-            Text(
-                text = card.title,
-                style = TextStyle(
-                    color = if (completing) Muted else InkLight,
-                    fontSize = 14.sp,
-                    textDecoration = if (completing) TextDecoration.LineThrough else null,
-                ),
-                maxLines = 1,
-            )
-        }
-        Spacer(GlanceModifier.width(8.dp))
-        if (card.startUtc != null) {
-            Text(
-                text = formatDate(card.startUtc),
-                style = TextStyle(color = Muted, fontSize = 12.sp),
-            )
         }
     }
 }

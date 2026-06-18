@@ -2,6 +2,7 @@ package com.mochikanban.app.data.repo
 
 import com.mochikanban.app.data.db.dao.LabelDao
 import com.mochikanban.app.data.db.entity.LabelEntity
+import com.mochikanban.app.domain.GoogleCalendarColors
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 import javax.inject.Inject
@@ -17,14 +18,18 @@ class LabelRepository @Inject constructor(
     suspend fun byName(name: String): LabelEntity? = labelDao.byName(name)
 
     suspend fun ensureDefaults() {
-        if (labelDao.all().isNotEmpty()) return
+        val current = labelDao.all()
+        if (current.isNotEmpty()) {
+            migrateLegacyDefaultColors(current)
+            return
+        }
         val seeds = listOf(
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Calm", colorHex = "#86E7BF", sortOrder = 0),
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Heart", colorHex = "#FFB4C4", sortOrder = 1),
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Focus", colorHex = "#B6D0FF", sortOrder = 2),
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Hustle", colorHex = "#FFD988", sortOrder = 3),
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Dream", colorHex = "#D4BBFF", sortOrder = 4),
-            LabelEntity(id = UUID.randomUUID().toString(), name = "Urgent", colorHex = "#FFB39E", sortOrder = 5),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Calm", colorHex = "#33B679", sortOrder = 0),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Heart", colorHex = "#E67C73", sortOrder = 1),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Focus", colorHex = "#3F51B5", sortOrder = 2),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Hustle", colorHex = "#F6BF26", sortOrder = 3),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Dream", colorHex = "#8E24AA", sortOrder = 4),
+            LabelEntity(id = UUID.randomUUID().toString(), name = "Urgent", colorHex = "#D50000", sortOrder = 5),
         )
         labelDao.upsertAll(seeds)
     }
@@ -51,12 +56,31 @@ class LabelRepository @Inject constructor(
      * filtered out of the user-facing palette.
      */
     suspend fun ensureColorLabel(colorHex: String): LabelEntity {
-        val name = EVENT_COLOR_LABEL_PREFIX + colorHex.lowercase()
+        val normalized = GoogleCalendarColors.normalizeHex(colorHex) ?: colorHex
+        val name = EVENT_COLOR_LABEL_PREFIX + normalized.lowercase()
         byName(name)?.let { return it }
-        return add(name, colorHex)
+        return add(name, normalized)
+    }
+
+    private suspend fun migrateLegacyDefaultColors(labels: List<LabelEntity>) {
+        val updates = labels.mapNotNull { label ->
+            val replacement = LEGACY_DEFAULT_COLOR_MIGRATIONS[label.name] ?: return@mapNotNull null
+            if (!label.colorHex.equals(replacement.first, ignoreCase = true)) return@mapNotNull null
+            label.copy(colorHex = replacement.second)
+        }
+        if (updates.isNotEmpty()) labelDao.upsertAll(updates)
     }
 
     companion object {
         const val EVENT_COLOR_LABEL_PREFIX = "evtcolor:"
+
+        private val LEGACY_DEFAULT_COLOR_MIGRATIONS = mapOf(
+            "Calm" to ("#86E7BF" to "#33B679"),
+            "Heart" to ("#FFB4C4" to "#E67C73"),
+            "Focus" to ("#B6D0FF" to "#3F51B5"),
+            "Hustle" to ("#FFD988" to "#F6BF26"),
+            "Dream" to ("#D4BBFF" to "#8E24AA"),
+            "Urgent" to ("#FFB39E" to "#D50000"),
+        )
     }
 }

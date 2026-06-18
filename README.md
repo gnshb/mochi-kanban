@@ -46,6 +46,12 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.3
+
+- Kept overdue timed tasks in To do with an action-required warning instead of auto-completing them.
+- Added active/overdue glows in the app and widget, with targeted widget clock refreshes.
+- Switched label colors and Google event color sync to exact Calendar color IDs instead of nearest matches.
+
 ### v0.1.2
 
 - Fixed duplicate calendar events from rapid edits before the first sync.

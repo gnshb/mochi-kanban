@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -85,6 +87,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mochikanban.app.data.db.entity.CardEntity
 import com.mochikanban.app.data.db.entity.LabelEntity
 import com.mochikanban.app.domain.Column as KanbanColumn
+import com.mochikanban.app.domain.GoogleCalendarColors
 import com.mochikanban.app.sync.SyncSnapshot
 import com.mochikanban.app.ui.components.ColumnHeader
 import com.mochikanban.app.ui.components.KanbanCard
@@ -271,6 +274,7 @@ fun BoardScreen(
                                 BoardColumn(
                                     column = column,
                                     cards = cards,
+                                    now = state.now,
                                     labelColorFor = ::labelColorFor,
                                     isCardDragHover = drag is Drag.CardDrag &&
                                         hoveredColumn(columnBounds, dragPointer) == column,
@@ -326,7 +330,14 @@ fun BoardScreen(
                                     scaleY = 1.03f
                                     alpha = 0.97f
                                 },
-                        ) { KanbanCard(card = current.card, labelColor = labelColorFor(current.card), elevated = true) }
+                        ) {
+                            KanbanCard(
+                                card = current.card,
+                                labelColor = labelColorFor(current.card),
+                                now = state.now,
+                                elevated = true,
+                            )
+                        }
                     }
                     is Drag.LabelDrag -> {
                         Box(
@@ -495,6 +506,7 @@ private fun dropIndex(bounds: List<ColumnBounds>, column: KanbanColumn, p: Offse
 private fun BoardColumn(
     column: KanbanColumn,
     cards: List<CardEntity>,
+    now: Long,
     labelColorFor: (CardEntity) -> Color,
     isCardDragHover: Boolean,
     isLabelDragHover: Boolean,
@@ -556,6 +568,7 @@ private fun BoardColumn(
                     CardRow(
                         card = card,
                         labelColor = labelColorFor(card),
+                        now = now,
                         labelDragActive = isLabelDragHover,
                         celebrate = celebrateCardId == card.id,
                         onTap = { onCardTap(card.id) },
@@ -580,6 +593,7 @@ private fun BoardColumn(
 private fun CardRow(
     card: CardEntity,
     labelColor: Color,
+    now: Long,
     labelDragActive: Boolean,
     celebrate: Boolean,
     onTap: () -> Unit,
@@ -632,7 +646,7 @@ private fun CardRow(
                 )
             },
     ) {
-        KanbanCard(card = card, labelColor = labelColor)
+        KanbanCard(card = card, labelColor = labelColor, now = now)
     }
 }
 
@@ -644,10 +658,7 @@ private fun LabelEditorDialog(
     onDelete: (String) -> Unit,
     onClose: () -> Unit,
 ) {
-    val palette = listOf(
-        "#86E7BF", "#FFB4C4", "#B6D0FF", "#FFD988", "#D4BBFF",
-        "#FFB39E", "#9DD1B5", "#A6E2FF", "#FFCFA0", "#E8B8FF",
-    )
+    val palette = GoogleCalendarColors.eventPalette
     var addName by remember { mutableStateOf("") }
     var addColor by remember { mutableStateOf(palette.first()) }
 
@@ -750,7 +761,10 @@ private fun ColorRow(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        modifier = Modifier.horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         palette.forEach { hex ->
             val isSel = hex.equals(selected, ignoreCase = true)
             Box(

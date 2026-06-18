@@ -17,10 +17,12 @@ import dagger.assisted.AssistedInject
 class WidgetRefreshWorker @AssistedInject constructor(
     @Assisted appContext: Context,
     @Assisted params: WorkerParameters,
+    private val scheduler: WidgetRefreshScheduler,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
         runCatching { KanbanGlanceWidget().updateAll(applicationContext) }
+        scheduler.scheduleNext()
         return Result.success()
     }
 

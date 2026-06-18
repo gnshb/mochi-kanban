@@ -47,18 +47,48 @@ data class CardEntity(
     val deletedLocal: Boolean = false,
     val syncState: SyncState = SyncState.IDLE,
 ) {
+    fun endUtc(): Long? =
+        startUtc?.let { it + (durationMin ?: 60).coerceAtLeast(1) * 60_000L }
+
+    fun isAttentionWindow(now: Long): Boolean {
+        val start = startUtc ?: return false
+        val end = endUtc() ?: return false
+        return column != Column.DONE && now >= start - ATTENTION_LEAD_MS && now < end
+    }
+
+    fun isActionRequired(now: Long): Boolean {
+        val end = endUtc() ?: return false
+        return column != Column.DONE && now >= end
+    }
+
+    fun todoSortBucket(now: Long): Int = when {
+        isActionRequired(now) -> 0
+        isAttentionWindow(now) -> 1
+        else -> 2
+    }
+
+    fun nextClockTransitionAfter(now: Long): Long? {
+        if (column == Column.DONE) return null
+        val start = startUtc ?: return null
+        val end = endUtc() ?: return null
+        return listOf(start - ATTENTION_LEAD_MS, start, end)
+            .filter { it > now }
+            .minOrNull()
+    }
+
     /**
-     * For dated calendar cards the board column is driven by the clock rather than
-     * stored placement: upcoming → TODO, in-progress → DOING, finished → DONE.
-     * Undated cards (e.g. quick-add without a date) keep their manual [column].
+     * Dated cards still move into Doing while their event is active, but reaching
+     * the scheduled end no longer completes the task. It returns to To do as an
+     * action-required card until the user finishes or snoozes it.
      */
     fun effectiveColumn(now: Long): Column {
+        if (column == Column.DONE) return Column.DONE
         val start = startUtc ?: return column
         val end = start + (durationMin ?: 60).coerceAtLeast(1) * 60_000L
         return when {
             now < start -> Column.TODO
             now < end -> Column.DOING
-            else -> Column.DONE
+            else -> Column.TODO
         }
     }
 
@@ -74,4 +104,8 @@ data class CardEntity(
         calendarId = calendarId,
         remoteEventId = remoteEventId,
     )
+
+    companion object {
+        const val ATTENTION_LEAD_MS = 60L * 60 * 1000
+    }
 }

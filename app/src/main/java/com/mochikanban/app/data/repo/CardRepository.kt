@@ -11,11 +11,21 @@ import com.mochikanban.app.reminders.ReminderScheduler
 import com.mochikanban.app.sync.SyncTrigger
 import com.mochikanban.app.util.Time
 import com.mochikanban.app.widget.WidgetUpdater
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+
+data class BoardColumnSnapshot(
+    val now: Long,
+    val columns: Map<Column, List<CardEntity>>,
+)
 
 @Singleton
 class CardRepository @Inject constructor(
@@ -33,15 +43,18 @@ class CardRepository @Inject constructor(
     /**
      * Buckets cards into columns by [CardEntity.effectiveColumn] (clock-driven for
      * dated cards) and orders each column chronologically: by start time, undated
-     * cards last by manual position. `now` is sampled per emission, so the board
-     * reflects the current time whenever it (re)collects — i.e. on open and on sync.
+     * cards last by manual position. A lightweight clock snapshot keeps time-driven
+     * card states current even when no database row changes.
      */
-    fun observeByColumn(): Flow<Map<Column, List<CardEntity>>> =
-        cardDao.observeAll().map { all ->
-            val now = Time.now()
-            Column.values().associateWith { col ->
-                all.filter { it.effectiveColumn(now) == col }
-                    .sortedWith(compareBy({ it.startUtc ?: Long.MAX_VALUE }, { it.position }))
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeByColumn(): Flow<BoardColumnSnapshot> =
+        cardDao.observeAll().flatMapLatest { all ->
+            flow {
+                while (currentCoroutineContext().isActive) {
+                    val now = Time.now()
+                    emit(BoardColumnSnapshot(now = now, columns = bucketByColumn(all, now)))
+                    delay(nextClockRefreshDelay(all, now))
+                }
             }
         }
 
@@ -192,5 +205,31 @@ class CardRepository @Inject constructor(
             prev != null && next == null -> prev + 1.0
             else -> (prev!! + next!!) / 2.0
         }
+    }
+
+    private fun bucketByColumn(all: List<CardEntity>, now: Long): Map<Column, List<CardEntity>> =
+        Column.values().associateWith { col ->
+            val cards = all.filter { it.effectiveColumn(now) == col }
+            when (col) {
+                Column.TODO -> cards.sortedWith(
+                    compareBy<CardEntity> { it.todoSortBucket(now) }
+                        .thenBy { it.startUtc ?: Long.MAX_VALUE }
+                        .thenBy { it.position },
+                )
+                else -> cards.sortedWith(compareBy({ it.startUtc ?: Long.MAX_VALUE }, { it.position }))
+            }
+        }
+
+    private fun nextClockRefreshDelay(cards: List<CardEntity>, now: Long): Long {
+        val next = cards.asSequence()
+            .mapNotNull { it.nextClockTransitionAfter(now) }
+            .minOrNull()
+        val targetDelay = next?.let { it - now } ?: MAX_CLOCK_REFRESH_MS
+        return targetDelay.coerceIn(MIN_CLOCK_REFRESH_MS, MAX_CLOCK_REFRESH_MS)
+    }
+
+    private companion object {
+        const val MIN_CLOCK_REFRESH_MS = 1_000L
+        const val MAX_CLOCK_REFRESH_MS = 60_000L
     }
 }

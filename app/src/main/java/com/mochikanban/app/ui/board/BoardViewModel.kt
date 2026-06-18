@@ -9,6 +9,7 @@ import com.mochikanban.app.data.repo.LabelRepository
 import com.mochikanban.app.domain.Column
 import com.mochikanban.app.sync.SyncStatus
 import com.mochikanban.app.sync.SyncTrigger
+import com.mochikanban.app.util.Time
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class BoardUiState(
+    val now: Long = Time.now(),
     val columns: Map<Column, List<CardEntity>> = emptyMap(),
 )
 
@@ -30,7 +32,7 @@ class BoardViewModel @Inject constructor(
 ) : ViewModel() {
 
     val state: StateFlow<BoardUiState> = repo.observeByColumn()
-        .map { BoardUiState(columns = it) }
+        .map { BoardUiState(now = it.now, columns = it.columns) }
         .stateIn(viewModelScope, SharingStarted.Lazily, BoardUiState())
 
     // Palette excludes hidden per-account colour labels…
