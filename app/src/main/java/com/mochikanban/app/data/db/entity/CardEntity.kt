@@ -6,6 +6,9 @@ import androidx.room.PrimaryKey
 import com.mochikanban.app.domain.Card
 import com.mochikanban.app.domain.Column
 import com.mochikanban.app.domain.SyncState
+import java.time.Instant
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Entity(
     tableName = "cards",
@@ -64,6 +67,13 @@ data class CardEntity(
     fun isScheduledBefore(dayStartUtc: Long): Boolean {
         val end = endUtc() ?: return false
         return end < dayStartUtc
+    }
+
+    fun isLikelyLegacyAllDayImport(zone: ZoneId = ZoneId.systemDefault()): Boolean {
+        val start = startUtc ?: return false
+        return remoteEventId != null &&
+            durationMin == null &&
+            Instant.ofEpochMilli(start).atZone(zone).toLocalTime() == LocalTime.MIDNIGHT
     }
 
     fun todoSortBucket(now: Long): Int = when {

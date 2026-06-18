@@ -1,6 +1,8 @@
 package com.mochikanban.app.domain
 
 object GoogleCalendarColors {
+    const val DEFAULT_EVENT_COLOR_ID = "7"
+
     val eventColors: Map<String, String> = linkedMapOf(
         "1" to "#7986CB", // Lavender
         "2" to "#33B679", // Sage
@@ -16,6 +18,7 @@ object GoogleCalendarColors {
     )
 
     val eventPalette: List<String> = eventColors.values.toList()
+    val defaultEventColor: String = eventColors.getValue(DEFAULT_EVENT_COLOR_ID)
 
     fun colorForId(colorId: String?): String? =
         colorId?.let { eventColors[it] }

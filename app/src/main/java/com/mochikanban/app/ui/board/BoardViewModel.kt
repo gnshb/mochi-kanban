@@ -79,6 +79,14 @@ class BoardViewModel @Inject constructor(
         viewModelScope.launch { repo.delete(id) }
     }
 
+    fun completeCard(id: String) {
+        viewModelScope.launch { repo.completeCard(id) }
+    }
+
+    fun snoozeCard(id: String, minutes: Int) {
+        viewModelScope.launch { repo.snooze(id, minutes) }
+    }
+
     fun addLabel(name: String, colorHex: String) {
         viewModelScope.launch { labelRepo.add(name, colorHex) }
     }

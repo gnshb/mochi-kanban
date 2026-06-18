@@ -148,6 +148,10 @@ class SyncEngine @Inject constructor(
     private suspend fun ingest(calendarId: String, event: EventDto, calendarColor: String?): Boolean {
         val eventId = event.id ?: return false
         val existing = cardDao.byRemoteId(eventId)
+        if (event.isAllDay()) {
+            if (existing != null) cardDao.hardDelete(existing.id)
+            return existing != null
+        }
         val remoteUpdated = event.updated?.let {
             runCatching { OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull()
         }

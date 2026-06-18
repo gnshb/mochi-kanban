@@ -95,6 +95,7 @@ import com.mochikanban.app.ui.components.KawaiiBackdrop
 import com.mochikanban.app.ui.components.MochiMascot
 import com.mochikanban.app.ui.edit.EditCardSheet
 import com.mochikanban.app.ui.theme.DarkTokens
+import com.mochikanban.app.ui.theme.matteLabelColor
 import com.mochikanban.app.util.HexColor
 import kotlinx.coroutines.delay
 import java.time.Instant
@@ -131,6 +132,7 @@ private data class CardBoundsInfo(val cardId: String, val rect: Rect)
 fun BoardScreen(
     onOpenSettings: () -> Unit,
     initialEditCardId: String? = null,
+    initialActionCardId: String? = null,
     initialQuickAdd: Boolean = false,
     vm: BoardViewModel = hiltViewModel(),
 ) {
@@ -141,6 +143,7 @@ fun BoardScreen(
 
     var editingCardId by remember { mutableStateOf<String?>(initialEditCardId) }
     var editorOpen by remember { mutableStateOf(initialEditCardId != null || initialQuickAdd) }
+    var actionCardId by remember { mutableStateOf(initialActionCardId) }
     var labelEditorOpen by remember { mutableStateOf(false) }
     var celebrateCardId by remember { mutableStateOf<String?>(null) }
 
@@ -171,7 +174,8 @@ fun BoardScreen(
 
     fun labelColorFor(card: CardEntity): Color {
         val hex = card.labelId?.let { labelsById[it]?.colorHex }
-        return HexColor.parseOr(hex, DarkTokens.Outline)
+        val fallback = HexColor.parseOr(GoogleCalendarColors.defaultEventColor, DarkTokens.SkyDark)
+        return HexColor.parseOr(hex, fallback).matteLabelColor()
     }
 
     val reportColumnBounds: (KanbanColumn, Rect, List<Float>) -> Unit = { col, rect, tops ->
@@ -280,9 +284,13 @@ fun BoardScreen(
                                         hoveredColumn(columnBounds, dragPointer) == column,
                                     isLabelDragHover = drag is Drag.LabelDrag,
                                     celebrateCardId = celebrateCardId,
-                                    onCardTap = { id ->
-                                        editingCardId = id
-                                        editorOpen = true
+                                    onCardTap = { card ->
+                                        if (card.isActionRequired(state.now)) {
+                                            actionCardId = card.id
+                                        } else {
+                                            editingCardId = card.id
+                                            editorOpen = true
+                                        }
                                     },
                                     onCardLongPressStart = { card, sizePx, pressInCard, windowPos ->
                                         drag = Drag.CardDrag(card, sizePx, pressInCard)
@@ -352,7 +360,7 @@ fun BoardScreen(
                                     shape = CircleShape
                                     clip = true
                                 }
-                                .background(HexColor.parseOr(current.label.colorHex, DarkTokens.MintDark)),
+                                .background(HexColor.parseOr(current.label.colorHex, DarkTokens.MintDark).matteLabelColor()),
                         )
                     }
                     null -> Unit
@@ -378,6 +386,27 @@ fun BoardScreen(
             onUpdate = vm::updateLabel,
             onDelete = vm::deleteLabel,
             onClose = { labelEditorOpen = false },
+        )
+    }
+
+    val actionCard = state.columns.values.flatten().firstOrNull { it.id == actionCardId }
+    if (actionCard != null && actionCard.isActionRequired(state.now)) {
+        OverdueActionDialog(
+            card = actionCard,
+            onComplete = {
+                vm.completeCard(actionCard.id)
+                actionCardId = null
+            },
+            onSnooze = { minutes ->
+                vm.snoozeCard(actionCard.id, minutes)
+                actionCardId = null
+            },
+            onEdit = {
+                editingCardId = actionCard.id
+                editorOpen = true
+                actionCardId = null
+            },
+            onDismiss = { actionCardId = null },
         )
     }
 }
@@ -473,7 +502,7 @@ private fun LabelDot(
             .size(26.dp)
             .graphicsLayer { this.alpha = alpha }
             .clip(CircleShape)
-            .background(HexColor.parseOr(label.colorHex, DarkTokens.MintDark))
+            .background(HexColor.parseOr(label.colorHex, DarkTokens.MintDark).matteLabelColor())
             .onGloballyPositioned { c -> origin = c.positionInWindow() }
             .pointerInput(label.id) {
                 detectDragGesturesAfterLongPress(
@@ -511,7 +540,7 @@ private fun BoardColumn(
     isCardDragHover: Boolean,
     isLabelDragHover: Boolean,
     celebrateCardId: String?,
-    onCardTap: (String) -> Unit,
+    onCardTap: (CardEntity) -> Unit,
     onCardLongPressStart: (CardEntity, IntSize, Offset, Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
@@ -571,7 +600,7 @@ private fun BoardColumn(
                         now = now,
                         labelDragActive = isLabelDragHover,
                         celebrate = celebrateCardId == card.id,
-                        onTap = { onCardTap(card.id) },
+                        onTap = { onCardTap(card) },
                         onLongPressStart = onCardLongPressStart,
                         onDrag = onDrag,
                         onDragEnd = onDragEnd,
@@ -660,7 +689,7 @@ private fun LabelEditorDialog(
 ) {
     val palette = GoogleCalendarColors.eventPalette
     var addName by remember { mutableStateOf("") }
-    var addColor by remember { mutableStateOf(palette.first()) }
+    var addColor by remember { mutableStateOf(GoogleCalendarColors.defaultEventColor) }
 
     AlertDialog(
         onDismissRequest = onClose,
@@ -724,7 +753,7 @@ private fun LabelRowEdit(
             modifier = Modifier
                 .size(22.dp)
                 .clip(CircleShape)
-                .background(HexColor.parseOr(color, DarkTokens.MintDark))
+                .background(HexColor.parseOr(color, DarkTokens.MintDark).matteLabelColor())
                 .clickable { pickerOpen = !pickerOpen },
         )
         Spacer(Modifier.width(10.dp))
@@ -771,11 +800,60 @@ private fun ColorRow(
                 modifier = Modifier
                     .size(if (isSel) 26.dp else 22.dp)
                     .clip(CircleShape)
-                    .background(HexColor.parseOr(hex, DarkTokens.MintDark))
+                    .background(HexColor.parseOr(hex, DarkTokens.MintDark).matteLabelColor())
                     .clickable { onSelect(hex) },
             )
         }
     }
+}
+
+@Composable
+private fun OverdueActionDialog(
+    card: CardEntity,
+    onComplete: () -> Unit,
+    onSnooze: (Int) -> Unit,
+    onEdit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val options = listOf(
+        "15 minutes" to 15,
+        "30 minutes" to 30,
+        "1 hour" to 60,
+        "3 hours" to 180,
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = DarkTokens.Surface,
+        title = { Text(card.title, color = DarkTokens.Ink) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = onComplete,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = DarkTokens.MintDark,
+                        contentColor = DarkTokens.Background,
+                    ),
+                ) { Text("Complete") }
+                options.forEach { (label, minutes) ->
+                    Button(
+                        onClick = { onSnooze(minutes) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DarkTokens.SurfaceVariant,
+                            contentColor = DarkTokens.Ink,
+                        ),
+                    ) { Text("Snooze $label") }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onEdit) { Text("Edit", color = DarkTokens.MintDark) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel", color = DarkTokens.Muted) }
+        },
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

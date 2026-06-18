@@ -46,6 +46,14 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.5
+
+- Hide all-day Google Calendar events from the board and widget.
+- Refresh widgets through `updateAll()` after writes so newly added cards appear promptly.
+- Use Google Calendar's default blue for unlabeled/default cards, with softer rendered swatches.
+- Improve active/overdue glow as an opaque color tint plus colored card shadow.
+- Open a Complete/Snooze chooser when tapping an overdue red-glow card.
+
 ### v0.1.4
 
 - Restored stable card/widget sizing for action-required tasks: the state is just a red glow.

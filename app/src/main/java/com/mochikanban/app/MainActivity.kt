@@ -38,11 +38,16 @@ class MainActivity : ComponentActivity() {
         )
         maybeRequestNotificationPermission()
         val openCardId = intent.getStringExtra("cardId")
+        val openActionCardId = intent.getStringExtra("actionCardId")
         val openQuickAdd = intent.getStringExtra("quickAdd") == "1"
         setContent {
             MochiKanbanTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    App(openCardId = openCardId, openQuickAdd = openQuickAdd)
+                    App(
+                        openCardId = openCardId,
+                        openActionCardId = openActionCardId,
+                        openQuickAdd = openQuickAdd,
+                    )
                 }
             }
         }
@@ -60,13 +65,18 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun App(openCardId: String? = null, openQuickAdd: Boolean = false) {
+private fun App(
+    openCardId: String? = null,
+    openActionCardId: String? = null,
+    openQuickAdd: Boolean = false,
+) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = "board") {
         composable("board") {
             BoardScreen(
                 onOpenSettings = { nav.navigate("settings") },
                 initialEditCardId = openCardId,
+                initialActionCardId = openActionCardId,
                 initialQuickAdd = openQuickAdd,
             )
         }

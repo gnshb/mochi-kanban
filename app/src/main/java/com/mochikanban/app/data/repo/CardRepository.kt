@@ -170,7 +170,11 @@ class CardRepository @Inject constructor(
         val now = Time.now()
         val todayStart = Time.startOfToday()
         cardDao.allSnapshot()
-            .filter { it.effectiveColumn(now) == Column.DONE || it.isScheduledBefore(todayStart) }
+            .filter {
+                it.effectiveColumn(now) == Column.DONE ||
+                    it.isScheduledBefore(todayStart) ||
+                    it.isLikelyLegacyAllDayImport()
+            }
             .forEach { cardDao.hardDelete(it.id) }
         widget.refreshNow()
     }
@@ -213,6 +217,7 @@ class CardRepository @Inject constructor(
         return Column.values().associateWith { col ->
             val cards = all
                 .filterNot { it.isScheduledBefore(todayStart) }
+                .filterNot { it.isLikelyLegacyAllDayImport() }
                 .filter { it.effectiveColumn(now) == col }
             when (col) {
                 Column.TODO -> cards.sortedWith(

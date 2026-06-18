@@ -40,8 +40,9 @@ class EventMapper @Inject constructor(
         val colorLabelId = eventColorHex?.let { labelRepo.ensureColorLabel(it).id }
         val labelId = resolveLabel(labelName, labelColor) ?: existing?.labelId ?: colorLabelId
 
+        if (event.isAllDay()) return null
+
         val startMs = event.start?.dateTime?.let(::parseRfc3339)
-            ?: event.start?.date?.let { parseDate(it) }
         val endMs = event.end?.dateTime?.let(::parseRfc3339)
         val duration = if (startMs != null && endMs != null) {
             ((endMs - startMs) / 60_000L).toInt().coerceAtLeast(0)
@@ -112,20 +113,13 @@ class EventMapper @Inject constructor(
         if (name.isNullOrBlank()) return null
         val existing = labelRepo.byName(name)
         if (existing != null) return existing.id
-        val color = GoogleCalendarColors.normalizeHex(colorHex) ?: "#33B679"
+        val color = GoogleCalendarColors.normalizeHex(colorHex) ?: GoogleCalendarColors.defaultEventColor
         return labelRepo.add(name, color).id
     }
 
     private fun parseRfc3339(value: String): Long? = runCatching {
         OffsetDateTime.parse(value).toInstant().toEpochMilli()
     }.recoverCatching { Instant.parse(value).toEpochMilli() }.getOrNull()
-
-    // All-day events have a `date` (no time); place them at local 00:00.
-    private fun parseDate(value: String): Long? = runCatching {
-        java.time.LocalDate.parse(value)
-            .atStartOfDay(java.time.ZoneId.systemDefault())
-            .toInstant().toEpochMilli()
-    }.getOrNull()
 
     companion object {
         const val KEY_LABEL_NAME = "mochikanban_label_name"

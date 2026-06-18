@@ -1,6 +1,7 @@
 package com.mochikanban.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 
 val MochiCream = Color(0xFFFFFAF2)
 val MochiSurface = Color(0xFFFFFEFB)
@@ -45,3 +46,9 @@ object DarkTokens {
     val ColumnDoing = LemonContainer
     val ColumnDone = SkyContainer
 }
+
+fun Color.matteLabelColor(): Color =
+    lerp(this.copy(alpha = 1f), Color.White, 0.16f)
+
+fun Color.glowTint(accent: Color, amount: Float): Color =
+    lerp(this.copy(alpha = 1f), accent.copy(alpha = 1f), amount).copy(alpha = alpha)

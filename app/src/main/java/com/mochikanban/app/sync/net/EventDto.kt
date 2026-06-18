@@ -41,7 +41,9 @@ data class EventDto(
     val recurrence: List<String>? = null,
     val extendedProperties: ExtendedPropertiesDto? = null,
     val reminders: RemindersDto? = null,
-)
+) {
+    fun isAllDay(): Boolean = start?.date != null && start.dateTime == null
+}
 
 @Serializable
 data class RemindersDto(

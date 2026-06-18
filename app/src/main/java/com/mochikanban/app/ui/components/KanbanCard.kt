@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -38,6 +39,7 @@ import com.mochikanban.app.data.db.entity.CardEntity
 import com.mochikanban.app.domain.Column as KanbanColumn
 import com.mochikanban.app.ui.theme.DarkTokens
 import com.mochikanban.app.ui.theme.MochiCardShape
+import com.mochikanban.app.ui.theme.glowTint
 import com.mochikanban.app.util.ChecklistCodec
 import com.mochikanban.app.util.Time
 
@@ -58,11 +60,22 @@ fun KanbanCard(
         isDone -> labelColor.copy(alpha = 0.2f)
         else -> labelColor.copy(alpha = 0.40f)
     }
-    val container = DarkTokens.SurfaceVariant
+    val glowColor = if (actionRequired) DarkTokens.Error else labelColor
+    val glowActive = actionRequired || attentionWindow
+    val container = if (glowActive) DarkTokens.SurfaceVariant.glowTint(glowColor, 0.10f)
+    else DarkTokens.SurfaceVariant
     val checklist = ChecklistCodec.decode(card.checklist)
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .shadow(
+                elevation = if (glowActive || elevated) 14.dp else 0.dp,
+                shape = MochiCardShape,
+                clip = false,
+                ambientColor = glowColor.copy(alpha = if (glowActive) 0.55f else 0f),
+                spotColor = glowColor.copy(alpha = if (glowActive) 0.55f else 0f),
+            ),
         shape = MochiCardShape,
         colors = CardDefaults.cardColors(containerColor = container),
         border = BorderStroke(1.dp, borderColor),

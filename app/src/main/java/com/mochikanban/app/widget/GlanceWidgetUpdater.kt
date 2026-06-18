@@ -1,7 +1,7 @@
 package com.mochikanban.app.widget
 
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.updateAll
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,11 +24,7 @@ class GlanceWidgetUpdater @Inject constructor(
 
     override suspend fun refreshNow() {
         runCatching {
-            val manager = GlanceAppWidgetManager(ctx)
-            val widget = KanbanGlanceWidget()
-            manager.getGlanceIds(KanbanGlanceWidget::class.java).forEach { id ->
-                widget.update(ctx, id)
-            }
+            KanbanGlanceWidget().updateAll(ctx)
         }
         scheduler.scheduleNext()
     }

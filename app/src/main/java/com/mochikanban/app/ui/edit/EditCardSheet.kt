@@ -64,7 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mochikanban.app.domain.Column as KanbanColumn
+import com.mochikanban.app.domain.GoogleCalendarColors
 import com.mochikanban.app.ui.theme.DarkTokens
+import com.mochikanban.app.ui.theme.matteLabelColor
 import com.mochikanban.app.util.HexColor
 import com.mochikanban.app.util.Time
 import java.time.LocalDateTime
@@ -150,14 +152,17 @@ fun EditCardSheet(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     // None swatch
                     LabelSwatch(
-                        color = DarkTokens.Outline,
+                        color = HexColor.parseOr(
+                            GoogleCalendarColors.defaultEventColor,
+                            DarkTokens.SkyDark,
+                        ).matteLabelColor(),
                         selected = state.labelId == null,
                         crossed = true,
                         onClick = { vm.setLabel(null) },
                     )
                     labels.forEach { lbl ->
                         LabelSwatch(
-                            color = HexColor.parseOr(lbl.colorHex, DarkTokens.MintDark),
+                            color = HexColor.parseOr(lbl.colorHex, DarkTokens.MintDark).matteLabelColor(),
                             selected = state.labelId == lbl.id,
                             onClick = { vm.setLabel(lbl.id) },
                         )
