@@ -16,8 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
@@ -54,137 +52,104 @@ fun KanbanCard(
     val isDone = card.effectiveColumn(now) == KanbanColumn.DONE
     val actionRequired = card.isActionRequired(now)
     val attentionWindow = card.isAttentionWindow(now)
-    val glowColor = if (actionRequired) DarkTokens.Error else labelColor
-    val glowAlpha = when {
-        actionRequired -> 0.22f
-        attentionWindow -> 0.18f
-        else -> 0f
-    }
     val borderColor = when {
         actionRequired -> DarkTokens.Error.copy(alpha = 0.95f)
         attentionWindow -> labelColor.copy(alpha = 0.95f)
         isDone -> labelColor.copy(alpha = 0.2f)
         else -> labelColor.copy(alpha = 0.40f)
     }
-    val borderWidth = if (actionRequired || attentionWindow) 2.dp else 1.dp
     val container = DarkTokens.SurfaceVariant
     val checklist = ChecklistCodec.decode(card.checklist)
 
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(glowColor.copy(alpha = glowAlpha))
-            .padding(if (glowAlpha > 0f) 2.dp else 0.dp),
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MochiCardShape,
+        colors = CardDefaults.cardColors(containerColor = container),
+        border = BorderStroke(1.dp, borderColor),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (elevated || actionRequired || attentionWindow) 16.dp else 0.dp,
+        ),
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MochiCardShape,
-            colors = CardDefaults.cardColors(containerColor = container),
-            border = BorderStroke(borderWidth, borderColor),
-            elevation = CardDefaults.cardElevation(
-                defaultElevation = if (elevated || actionRequired || attentionWindow) 16.dp else 0.dp,
-            ),
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
         ) {
-            Row(
-                modifier = Modifier.padding(14.dp),
-                verticalAlignment = Alignment.Top,
-            ) {
-                Box(
-                    modifier = Modifier
-                        .padding(top = 6.dp)
-                        .size(10.dp)
-                        .clip(CircleShape)
-                        .background(if (actionRequired) DarkTokens.Error else labelColor),
-                )
-                Spacer(Modifier.width(12.dp))
-                androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = card.title,
-                            color = if (isDone) DarkTokens.Muted else DarkTokens.Ink,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                textDecoration = if (isDone) TextDecoration.LineThrough else null,
-                            ),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        AnimatedVisibility(
-                            visible = !isDone && card.startUtc != null,
-                            enter = fadeIn(),
-                            exit = fadeOut() + shrinkVertically(),
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(Modifier.width(8.dp))
-                                Icon(
-                                    Icons.Outlined.Schedule,
-                                    contentDescription = null,
-                                    tint = if (actionRequired) DarkTokens.Error else labelColor,
-                                    modifier = Modifier.size(13.dp),
-                                )
-                                Spacer(Modifier.width(3.dp))
-                                Text(
-                                    text = card.startUtc?.let { Time.format(it) }.orEmpty(),
-                                    color = DarkTokens.Muted,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
-                        }
-                    }
-
-                    if (actionRequired) {
-                        Spacer(Modifier.height(6.dp))
+            Box(
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(labelColor),
+            )
+            Spacer(Modifier.width(12.dp))
+            androidx.compose.foundation.layout.Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = card.title,
+                        color = if (isDone) DarkTokens.Muted else DarkTokens.Ink,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            textDecoration = if (isDone) TextDecoration.LineThrough else null,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    AnimatedVisibility(
+                        visible = !isDone && card.startUtc != null,
+                        enter = fadeIn(),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(Modifier.width(8.dp))
                             Icon(
-                                Icons.Outlined.ErrorOutline,
+                                Icons.Outlined.Schedule,
                                 contentDescription = null,
-                                tint = DarkTokens.Error,
+                                tint = labelColor,
                                 modifier = Modifier.size(13.dp),
                             )
-                            Spacer(Modifier.width(5.dp))
+                            Spacer(Modifier.width(3.dp))
                             Text(
-                                text = "Action required: finish or snooze",
-                                color = DarkTokens.Error,
+                                text = card.startUtc?.let { Time.format(it) }.orEmpty(),
+                                color = DarkTokens.Muted,
                                 style = MaterialTheme.typography.labelMedium,
                             )
                         }
                     }
+                }
 
-                    if (!checklist.isEmpty) {
-                        Spacer(Modifier.height(6.dp))
-                        androidx.compose.foundation.layout.Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            checklist.items.take(3).forEach { item ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        if (item.done) Icons.Filled.CheckBox
-                                        else Icons.Outlined.CheckBoxOutlineBlank,
-                                        contentDescription = null,
-                                        tint = if (item.done) labelColor else DarkTokens.Muted,
-                                        modifier = Modifier.size(14.dp),
-                                    )
-                                    Spacer(Modifier.width(6.dp))
-                                    Text(
-                                        text = item.text,
-                                        color = if (item.done) DarkTokens.Muted else DarkTokens.Ink,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            textDecoration = if (item.done) TextDecoration.LineThrough else null,
-                                        ),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                            if (checklist.total > 3) {
+                if (!checklist.isEmpty) {
+                    Spacer(Modifier.height(6.dp))
+                    androidx.compose.foundation.layout.Column(
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
+                        checklist.items.take(3).forEach { item ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    if (item.done) Icons.Filled.CheckBox
+                                    else Icons.Outlined.CheckBoxOutlineBlank,
+                                    contentDescription = null,
+                                    tint = if (item.done) labelColor else DarkTokens.Muted,
+                                    modifier = Modifier.size(14.dp),
+                                )
+                                Spacer(Modifier.width(6.dp))
                                 Text(
-                                    text = "+${checklist.total - 3} more · ${checklist.doneCount}/${checklist.total} done",
-                                    color = DarkTokens.Muted,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    text = item.text,
+                                    color = if (item.done) DarkTokens.Muted else DarkTokens.Ink,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        textDecoration = if (item.done) TextDecoration.LineThrough else null,
+                                    ),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                             }
+                        }
+                        if (checklist.total > 3) {
+                            Text(
+                                text = "+${checklist.total - 3} more · ${checklist.doneCount}/${checklist.total} done",
+                                color = DarkTokens.Muted,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
                         }
                     }
                 }

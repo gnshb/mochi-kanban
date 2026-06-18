@@ -38,6 +38,15 @@ class CardEntityTest {
         assertTrue(card.isAttentionWindow(start + 10_000L))
     }
 
+    @Test
+    fun scheduledCardBeforeTodayIsStale() {
+        val card = card(startUtc = 10_000L, durationMin = 30)
+        val dayStart = card.endUtc()!! + 1
+
+        assertTrue(card.isScheduledBefore(dayStart))
+        assertFalse(card.isScheduledBefore(card.endUtc()!!))
+    }
+
     private fun card(
         startUtc: Long,
         durationMin: Int,

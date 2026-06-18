@@ -168,8 +168,9 @@ class CardRepository @Inject constructor(
     /** Removes all currently-Done cards locally (used by the midnight cleanup). */
     suspend fun clearDone() {
         val now = Time.now()
+        val todayStart = Time.startOfToday()
         cardDao.allSnapshot()
-            .filter { it.effectiveColumn(now) == Column.DONE }
+            .filter { it.effectiveColumn(now) == Column.DONE || it.isScheduledBefore(todayStart) }
             .forEach { cardDao.hardDelete(it.id) }
         widget.refreshNow()
     }
@@ -207,9 +208,12 @@ class CardRepository @Inject constructor(
         }
     }
 
-    private fun bucketByColumn(all: List<CardEntity>, now: Long): Map<Column, List<CardEntity>> =
-        Column.values().associateWith { col ->
-            val cards = all.filter { it.effectiveColumn(now) == col }
+    private fun bucketByColumn(all: List<CardEntity>, now: Long): Map<Column, List<CardEntity>> {
+        val todayStart = Time.startOfToday()
+        return Column.values().associateWith { col ->
+            val cards = all
+                .filterNot { it.isScheduledBefore(todayStart) }
+                .filter { it.effectiveColumn(now) == col }
             when (col) {
                 Column.TODO -> cards.sortedWith(
                     compareBy<CardEntity> { it.todoSortBucket(now) }
@@ -219,6 +223,7 @@ class CardRepository @Inject constructor(
                 else -> cards.sortedWith(compareBy({ it.startUtc ?: Long.MAX_VALUE }, { it.position }))
             }
         }
+    }
 
     private fun nextClockRefreshDelay(cards: List<CardEntity>, now: Long): Long {
         val next = cards.asSequence()

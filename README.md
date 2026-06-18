@@ -46,6 +46,11 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.4
+
+- Restored stable card/widget sizing for action-required tasks: the state is just a red glow.
+- Hid scheduled cards whose end time is before today so stale calendar cards do not return to To do.
+
 ### v0.1.3
 
 - Kept overdue timed tasks in To do with an action-required warning instead of auto-completing them.

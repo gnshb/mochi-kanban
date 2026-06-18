@@ -61,6 +61,11 @@ data class CardEntity(
         return column != Column.DONE && now >= end
     }
 
+    fun isScheduledBefore(dayStartUtc: Long): Boolean {
+        val end = endUtc() ?: return false
+        return end < dayStartUtc
+    }
+
     fun todoSortBucket(now: Long): Int = when {
         isActionRequired(now) -> 0
         isAttentionWindow(now) -> 1
