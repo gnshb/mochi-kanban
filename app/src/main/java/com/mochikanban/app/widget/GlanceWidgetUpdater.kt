@@ -7,7 +7,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -48,8 +47,9 @@ class GlanceWidgetUpdater @Inject constructor(
 
     override suspend fun refreshNow() {
         refreshMutex.withLock {
-            runCatching { renderWidgets() }
-            delay(FOLLOW_UP_RENDER_DELAY_MS)
+            // A single render suffices: callers either run after their DB write has
+            // committed, or are driven by WidgetSyncObserver which emits post-commit,
+            // so the render always sees fresh data (no follow-up re-render needed).
             runCatching { renderWidgets() }
             scheduler.scheduleNext()
         }
@@ -63,9 +63,5 @@ class GlanceWidgetUpdater @Inject constructor(
         manager.getGlanceIds(KanbanGlanceWidget::class.java).forEach { id ->
             widget.update(ctx, id)
         }
-    }
-
-    private companion object {
-        const val FOLLOW_UP_RENDER_DELAY_MS = 250L
     }
 }

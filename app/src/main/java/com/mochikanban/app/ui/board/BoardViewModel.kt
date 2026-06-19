@@ -82,8 +82,8 @@ class BoardViewModel @Inject constructor(
         viewModelScope.launch { repo.completeCard(id) }
     }
 
-    fun snoozeCard(id: String, minutes: Int) {
-        viewModelScope.launch { repo.snooze(id, minutes) }
+    fun snoozeCardUntil(id: String, targetUtc: Long) {
+        viewModelScope.launch { repo.snoozeUntil(id, targetUtc) }
     }
 
     fun addLabel(name: String, colorHex: String) {

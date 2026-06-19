@@ -46,6 +46,13 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.8
+
+- Make the active/overdue glow a clearer red in the app and widget.
+- Snooze options are now 30 min, 1 hour, 3 hours, and tomorrow (same time); the hour/tomorrow options snap to the nearest whole hour.
+- Keep the widget in sync with the app by observing the data directly: any add, edit, delete, move, or sync now re-renders the widget immediately, replacing the previous manual-refresh hacks.
+- Tapping empty space below the widget list opens the app.
+
 ### v0.1.7
 
 - Start active glows only when a timed card actually starts, not one hour early.

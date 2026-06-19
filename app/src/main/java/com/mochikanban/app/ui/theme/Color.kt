@@ -41,6 +41,9 @@ object DarkTokens {
     val CoralContainer = Color(0xFF8C3B22)
 
     val Error = Color(0xFFFFB4AB)
+    // Glow accent for overdue / action-required cards — a touch redder than [Error]
+    // so the attention state reads clearly red rather than salmon.
+    val GlowRed = Color(0xFFFF8472)
 
     val ColumnTodo = MintContainer
     val ColumnDoing = LemonContainer

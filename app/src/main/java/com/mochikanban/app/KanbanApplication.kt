@@ -12,6 +12,7 @@ import com.mochikanban.app.reminders.NotificationChannels
 import com.mochikanban.app.sync.WorkManagerSyncTrigger
 import com.mochikanban.app.widget.WidgetRefreshWorker
 import com.mochikanban.app.widget.WidgetRefreshScheduler
+import com.mochikanban.app.widget.WidgetSyncObserver
 import dagger.hilt.android.HiltAndroidApp
 import java.time.Duration
 import java.time.LocalTime
@@ -30,6 +31,7 @@ class KanbanApplication : Application(), Configuration.Provider {
     @Inject lateinit var syncTrigger: WorkManagerSyncTrigger
     @Inject lateinit var labelRepo: LabelRepository
     @Inject lateinit var widgetRefreshScheduler: WidgetRefreshScheduler
+    @Inject lateinit var widgetSyncObserver: WidgetSyncObserver
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -41,6 +43,8 @@ class KanbanApplication : Application(), Configuration.Provider {
         scheduleMidnightCleanup()
         appScope.launch { labelRepo.ensureDefaults() }
         appScope.launch { widgetRefreshScheduler.scheduleNext() }
+        // Single source of truth for widget freshness: re-render on any data change.
+        widgetSyncObserver.start(appScope)
     }
 
     /** Coarse fallback; exact one-shot widget refreshes are scheduled at task boundaries. */

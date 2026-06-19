@@ -88,6 +88,7 @@ import com.mochikanban.app.data.db.entity.CardEntity
 import com.mochikanban.app.data.db.entity.LabelEntity
 import com.mochikanban.app.domain.Column as KanbanColumn
 import com.mochikanban.app.domain.GoogleCalendarColors
+import com.mochikanban.app.reminders.SnoozeOptions
 import com.mochikanban.app.sync.SyncSnapshot
 import com.mochikanban.app.ui.components.ColumnHeader
 import com.mochikanban.app.ui.components.KanbanCard
@@ -397,8 +398,8 @@ fun BoardScreen(
                 vm.completeCard(actionCard.id)
                 actionCardId = null
             },
-            onSnooze = { minutes ->
-                vm.snoozeCard(actionCard.id, minutes)
+            onSnooze = { targetUtc ->
+                vm.snoozeCardUntil(actionCard.id, targetUtc)
                 actionCardId = null
             },
             onEdit = {
@@ -811,16 +812,11 @@ private fun ColorRow(
 private fun OverdueActionDialog(
     card: CardEntity,
     onComplete: () -> Unit,
-    onSnooze: (Int) -> Unit,
+    onSnooze: (Long) -> Unit,
     onEdit: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val options = listOf(
-        "15 minutes" to 15,
-        "30 minutes" to 30,
-        "1 hour" to 60,
-        "3 hours" to 180,
-    )
+    val options = remember { SnoozeOptions.all() }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = DarkTokens.Surface,
@@ -835,15 +831,15 @@ private fun OverdueActionDialog(
                         contentColor = DarkTokens.Background,
                     ),
                 ) { Text("Complete") }
-                options.forEach { (label, minutes) ->
+                options.forEach { option ->
                     Button(
-                        onClick = { onSnooze(minutes) },
+                        onClick = { onSnooze(option.targetUtc()) },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = DarkTokens.SurfaceVariant,
                             contentColor = DarkTokens.Ink,
                         ),
-                    ) { Text("Snooze $label") }
+                    ) { Text("Snooze ${option.label}") }
                 }
             }
         },

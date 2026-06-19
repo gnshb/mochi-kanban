@@ -79,7 +79,8 @@ class CardRepository @Inject constructor(
             if (deferFlush) sync.requestFlushDelayed() else sync.requestFlush()
         }
         reminders.reschedule(toSave)
-        widget.refreshNow()
+        // Foreground edits don't refresh the widget here: WidgetSyncObserver watches
+        // the cards table and re-renders on any change while the app process is alive.
     }
 
     suspend fun create(card: CardEntity): CardEntity {
@@ -105,7 +106,7 @@ class CardRepository @Inject constructor(
             outboxDao.deleteByCard(id)
         }
         reminders.cancel(id)
-        widget.refreshNow()
+        // WidgetSyncObserver re-renders on the table change (see [upsert]).
     }
 
     suspend fun setLabel(cardId: String, labelId: String?) {
@@ -183,9 +184,12 @@ class CardRepository @Inject constructor(
      * Snooze: move the event's start (and reminder) [minutes] into the future so it
      * returns to To do. Undated cards just get their reminder pushed out.
      */
-    suspend fun snooze(cardId: String, minutes: Int) {
+    suspend fun snooze(cardId: String, minutes: Int) =
+        snoozeUntil(cardId, Time.now() + minutes * 60_000L)
+
+    /** Snooze a card until an absolute [target] time (epoch millis). */
+    suspend fun snoozeUntil(cardId: String, target: Long) {
         val c = cardDao.byId(cardId) ?: return
-        val target = Time.now() + minutes * 60_000L
         val updated = if (c.startUtc != null) {
             c.copy(
                 startUtc = target,

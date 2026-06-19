@@ -55,12 +55,12 @@ fun KanbanCard(
     val actionRequired = card.isActionRequired(now)
     val attentionWindow = card.isAttentionWindow(now)
     val borderColor = when {
-        actionRequired -> DarkTokens.Error.copy(alpha = 0.95f)
+        actionRequired -> DarkTokens.GlowRed.copy(alpha = 0.95f)
         attentionWindow -> labelColor.copy(alpha = 0.95f)
         isDone -> labelColor.copy(alpha = 0.2f)
         else -> labelColor.copy(alpha = 0.40f)
     }
-    val glowColor = if (actionRequired) DarkTokens.Error else labelColor
+    val glowColor = if (actionRequired) DarkTokens.GlowRed else labelColor
     val glowActive = actionRequired || attentionWindow
     val container = if (glowActive) DarkTokens.SurfaceVariant.glowTint(glowColor, 0.10f)
     else DarkTokens.SurfaceVariant

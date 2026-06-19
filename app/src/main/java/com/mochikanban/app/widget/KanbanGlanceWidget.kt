@@ -199,6 +199,17 @@ private fun ListWidget(
                     items(items, itemId = { it.id.hashCode().toLong() }) { card ->
                         WidgetRow(card, labelsById, now = now, completing = card.id == completingId)
                     }
+                    // The list (a RemoteViews collection) swallows taps on the empty area
+                    // below the rows, so a tall trailing filler restores "tap to open app".
+                    item {
+                        Box(
+                            modifier = GlanceModifier
+                                .fillMaxWidth()
+                                .height(400.dp)
+                                .clickable(actionStartActivity<MainActivity>()),
+                            content = {},
+                        )
+                    }
                 }
             }
         }
@@ -219,7 +230,7 @@ private fun WidgetRow(
     val actionRequired = card.isActionRequired(now)
     val attentionWindow = card.isAttentionWindow(now)
     val rowBackground = when {
-        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.Error, 0.32f)
+        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.GlowRed, 0.32f)
         attentionWindow -> DarkTokens.SurfaceVariant.glowTint(labelAccent, 0.36f)
         else -> DarkTokens.Surface.copy(alpha = 0.72f)
     }

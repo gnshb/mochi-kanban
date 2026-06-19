@@ -30,8 +30,6 @@ import com.mochikanban.app.ui.theme.DarkTokens
 import com.mochikanban.app.ui.theme.MochiKanbanTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.time.LocalTime
-import java.time.ZoneId
 import javax.inject.Inject
 
 /** Snooze options shown when the user taps Snooze on a reminder notification. */
@@ -46,13 +44,7 @@ class SnoozeActivity : ComponentActivity() {
         getSystemService(NotificationManager::class.java)?.cancel(cardId?.hashCode() ?: 0)
         if (cardId == null) { finish(); return }
 
-        val options = listOf(
-            "15 minutes" to 15,
-            "30 minutes" to 30,
-            "1 hour" to 60,
-            "3 hours" to 180,
-            "Tomorrow 9:00" to minutesUntilTomorrow9(),
-        )
+        val options = SnoozeOptions.all()
 
         setContent {
             MochiKanbanTheme {
@@ -82,15 +74,15 @@ class SnoozeActivity : ComponentActivity() {
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
                             Text("Snooze", style = MaterialTheme.typography.titleLarge, color = DarkTokens.Ink)
-                            options.forEach { (label, minutes) ->
+                            options.forEach { option ->
                                 Button(
-                                    onClick = { snooze(cardId, minutes) },
+                                    onClick = { snooze(cardId, option.targetUtc()) },
                                     modifier = Modifier.fillMaxWidth(),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = DarkTokens.SurfaceVariant,
                                         contentColor = DarkTokens.Ink,
                                     ),
-                                ) { Text(label) }
+                                ) { Text(option.label) }
                             }
                         }
                     }
@@ -99,18 +91,11 @@ class SnoozeActivity : ComponentActivity() {
         }
     }
 
-    private fun snooze(cardId: String, minutes: Int) {
+    private fun snooze(cardId: String, targetUtc: Long) {
         lifecycleScope.launch {
-            repo.snooze(cardId, minutes)
+            repo.snoozeUntil(cardId, targetUtc)
             finish()
         }
-    }
-
-    private fun minutesUntilTomorrow9(): Int {
-        val zone = ZoneId.systemDefault()
-        val now = java.time.ZonedDateTime.now(zone)
-        val target = now.toLocalDate().plusDays(1).atTime(LocalTime.of(9, 0)).atZone(zone)
-        return java.time.Duration.between(now, target).toMinutes().toInt().coerceAtLeast(1)
     }
 
     companion object {
