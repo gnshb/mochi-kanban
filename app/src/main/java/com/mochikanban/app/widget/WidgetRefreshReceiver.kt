@@ -29,7 +29,9 @@ class WidgetRefreshReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                updater.refreshNow()
+                // Clock-driven transition (e.g. a card crossing into Doing) — the data
+                // is unchanged, so force the redraw past the content-signature check.
+                updater.refreshNow(force = true)
             } finally {
                 pending.finish()
             }

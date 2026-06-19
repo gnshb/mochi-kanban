@@ -136,6 +136,20 @@ private fun ListWidget(
                 .padding(bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Tap the mochi to manually refresh (pull from Calendar + redraw now).
+            Box(
+                modifier = GlanceModifier
+                    .size(32.dp)
+                    .clickable(actionRunCallback<RefreshWidgetAction>()),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_launcher_foreground),
+                    contentDescription = "Refresh",
+                    modifier = GlanceModifier.size(32.dp),
+                )
+            }
+            Spacer(GlanceModifier.width(8.dp))
             Text(
                 text = "To do",
                 style = TextStyle(
@@ -198,17 +212,6 @@ private fun ListWidget(
                 ) {
                     items(items, itemId = { it.id.hashCode().toLong() }) { card ->
                         WidgetRow(card, labelsById, now = now, completing = card.id == completingId)
-                    }
-                    // The list (a RemoteViews collection) swallows taps on the empty area
-                    // below the rows, so a tall trailing filler restores "tap to open app".
-                    item {
-                        Box(
-                            modifier = GlanceModifier
-                                .fillMaxWidth()
-                                .height(400.dp)
-                                .clickable(actionStartActivity<MainActivity>()),
-                            content = {},
-                        )
                     }
                 }
             }

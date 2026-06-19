@@ -46,6 +46,13 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.9
+
+- Adding/editing/deleting a card now updates the widget immediately, without waiting for a Calendar sync.
+- The widget only redraws when its visible content actually changed, so it no longer flickers/reloads every time the app comes to the foreground; Calendar is still pulled periodically in the background.
+- Tap the mochi in the widget header to manually refresh (pull from Calendar and redraw).
+- The widget scrollbar now appears only when there are enough cards to scroll.
+
 ### v0.1.8
 
 - Make the active/overdue glow a clearer red in the app and widget.

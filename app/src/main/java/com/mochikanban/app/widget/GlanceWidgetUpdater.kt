@@ -3,6 +3,9 @@ package com.mochikanban.app.widget
 import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
+import com.mochikanban.app.data.WidgetPrefs
+import com.mochikanban.app.data.db.dao.CardDao
+import com.mochikanban.app.data.db.dao.LabelDao
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +20,9 @@ import javax.inject.Singleton
 class GlanceWidgetUpdater @Inject constructor(
     @ApplicationContext private val ctx: Context,
     private val scheduler: WidgetRefreshScheduler,
+    private val cardDao: CardDao,
+    private val labelDao: LabelDao,
+    private val widgetPrefs: WidgetPrefs,
 ) : WidgetUpdater {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -24,6 +30,10 @@ class GlanceWidgetUpdater @Inject constructor(
     private val requestLock = Any()
     private var refreshWorkerActive = false
     private var refreshQueued = false
+
+    // Signature of the last content we actually rendered, so repeat calls that would
+    // draw the same pixels (e.g. a Calendar sync that pulled nothing new) are skipped.
+    @Volatile private var lastSignature: Int? = null
 
     override fun refresh() {
         synchronized(requestLock) {
@@ -45,12 +55,17 @@ class GlanceWidgetUpdater @Inject constructor(
         }
     }
 
-    override suspend fun refreshNow() {
+    override suspend fun refreshNow(force: Boolean) {
         refreshMutex.withLock {
-            // A single render suffices: callers either run after their DB write has
-            // committed, or are driven by WidgetSyncObserver which emits post-commit,
-            // so the render always sees fresh data (no follow-up re-render needed).
+            val signature = runCatching { contentSignature() }.getOrNull()
+            // Skip the redraw when nothing the widget shows has changed. The clock
+            // scheduler still runs so time-driven transitions stay armed.
+            if (!force && signature != null && signature == lastSignature) {
+                scheduler.scheduleNext()
+                return@withLock
+            }
             runCatching { renderWidgets() }
+            lastSignature = signature
             scheduler.scheduleNext()
         }
     }
@@ -63,5 +78,27 @@ class GlanceWidgetUpdater @Inject constructor(
         manager.getGlanceIds(KanbanGlanceWidget::class.java).forEach { id ->
             widget.update(ctx, id)
         }
+    }
+
+    /**
+     * A hash over everything the widget renders: card fields that drive the list, the
+     * label colours they reference, and the background opacity. Time-derived state
+     * (glows, column transitions) is intentionally excluded — those redraws come from
+     * the clock scheduler with [force] = true, not from data changes.
+     */
+    private suspend fun contentSignature(): Int {
+        val cards = cardDao.allSnapshot()
+            .sortedBy { it.id }
+            .joinToString("|") { c ->
+                listOf(
+                    c.id, c.title, c.startUtc, c.durationMin, c.column,
+                    c.labelId, c.originalStartUtc, c.position, c.deletedLocal,
+                ).joinToString(",")
+            }
+        val labels = labelDao.all()
+            .sortedBy { it.id }
+            .joinToString("|") { "${it.id}:${it.colorHex}" }
+        val opacity = runCatching { widgetPrefs.opacitySnapshot() }.getOrDefault(0.9f)
+        return listOf(opacity, cards, labels).hashCode()
     }
 }
