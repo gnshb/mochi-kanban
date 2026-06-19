@@ -22,7 +22,7 @@ class CalendarSyncWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         if (!tokenStore.isConfigured()) return Result.success()
         val outcome = engine.runOnce()
-        widget.refresh()
+        widget.refreshNow()
         return if (outcome.isSuccess) Result.success() else Result.retry()
     }
 }

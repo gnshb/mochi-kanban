@@ -62,7 +62,7 @@ fun KanbanCard(
     }
     val glowColor = if (actionRequired) DarkTokens.Error else labelColor
     val glowActive = actionRequired || attentionWindow
-    val container = if (glowActive) DarkTokens.SurfaceVariant.glowTint(glowColor, 0.14f)
+    val container = if (glowActive) DarkTokens.SurfaceVariant.glowTint(glowColor, 0.10f)
     else DarkTokens.SurfaceVariant
     val checklist = ChecklistCodec.decode(card.checklist)
 
@@ -70,11 +70,11 @@ fun KanbanCard(
         modifier = modifier
             .fillMaxWidth()
             .shadow(
-                elevation = if (glowActive || elevated) 20.dp else 0.dp,
+                elevation = if (glowActive || elevated) 16.dp else 0.dp,
                 shape = MochiCardShape,
                 clip = false,
-                ambientColor = glowColor.copy(alpha = if (glowActive) 0.70f else 0f),
-                spotColor = glowColor.copy(alpha = if (glowActive) 0.70f else 0f),
+                ambientColor = glowColor.copy(alpha = if (glowActive) 0.52f else 0f),
+                spotColor = glowColor.copy(alpha = if (glowActive) 0.52f else 0f),
             ),
         shape = MochiCardShape,
         colors = CardDefaults.cardColors(containerColor = container),

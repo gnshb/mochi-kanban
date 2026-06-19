@@ -25,7 +25,7 @@ class LabelRepository @Inject constructor(
     suspend fun ensureDefaults() {
         val current = labelDao.all()
         if (current.isNotEmpty()) {
-            migrateLegacyDefaultColors(current)
+            if (migrateLegacyDefaultColors(current)) widget.refreshNow()
             return
         }
         val seeds = listOf(
@@ -37,6 +37,7 @@ class LabelRepository @Inject constructor(
             LabelEntity(id = UUID.randomUUID().toString(), name = "Urgent", colorHex = "#D50000", sortOrder = 5),
         )
         labelDao.upsertAll(seeds)
+        widget.refreshNow()
     }
 
     suspend fun add(name: String, colorHex: String, refreshWidget: Boolean = true): LabelEntity {
@@ -48,18 +49,18 @@ class LabelRepository @Inject constructor(
             sortOrder = nextOrder,
         )
         labelDao.upsert(label)
-        if (refreshWidget) widget.refresh()
+        if (refreshWidget) widget.refreshNow()
         return label
     }
 
     suspend fun update(label: LabelEntity) {
         labelDao.upsert(label)
-        widget.refresh()
+        widget.refreshNow()
     }
 
     suspend fun delete(id: String) {
         labelDao.deleteById(id)
-        widget.refresh()
+        widget.refreshNow()
     }
 
     /**
@@ -79,13 +80,15 @@ class LabelRepository @Inject constructor(
             .filterNot { it.name.startsWith(EVENT_COLOR_LABEL_PREFIX) }
             .distinctBy { it.name.trim().lowercase() }
 
-    private suspend fun migrateLegacyDefaultColors(labels: List<LabelEntity>) {
+    private suspend fun migrateLegacyDefaultColors(labels: List<LabelEntity>): Boolean {
         val updates = labels.mapNotNull { label ->
             val replacement = LEGACY_DEFAULT_COLOR_MIGRATIONS[label.name] ?: return@mapNotNull null
             if (!label.colorHex.equals(replacement.first, ignoreCase = true)) return@mapNotNull null
             label.copy(colorHex = replacement.second)
         }
-        if (updates.isNotEmpty()) labelDao.upsertAll(updates)
+        if (updates.isEmpty()) return false
+        labelDao.upsertAll(updates)
+        return true
     }
 
     companion object {

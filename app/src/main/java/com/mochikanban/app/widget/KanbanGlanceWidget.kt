@@ -178,16 +178,27 @@ private fun ListWidget(
             }
         }
 
-        if (items.isEmpty()) {
-            Text(
-                text = "Nothing on the list",
-                style = TextStyle(color = Muted, fontSize = 13.sp),
-                modifier = GlanceModifier.padding(top = 4.dp),
-            )
-        } else {
-            LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-                items(items, itemId = { it.id.hashCode().toLong() }) { card ->
-                    WidgetRow(card, labelsById, now = now, completing = card.id == completingId)
+        Box(
+            modifier = GlanceModifier
+                .fillMaxWidth()
+                .defaultWeight()
+                .clickable(actionStartActivity<MainActivity>()),
+        ) {
+            if (items.isEmpty()) {
+                Text(
+                    text = "Nothing on the list",
+                    style = TextStyle(color = Muted, fontSize = 13.sp),
+                    modifier = GlanceModifier.padding(top = 4.dp),
+                )
+            } else {
+                LazyColumn(
+                    modifier = GlanceModifier
+                        .fillMaxSize()
+                        .clickable(actionStartActivity<MainActivity>()),
+                ) {
+                    items(items, itemId = { it.id.hashCode().toLong() }) { card ->
+                        WidgetRow(card, labelsById, now = now, completing = card.id == completingId)
+                    }
                 }
             }
         }
@@ -208,8 +219,8 @@ private fun WidgetRow(
     val actionRequired = card.isActionRequired(now)
     val attentionWindow = card.isAttentionWindow(now)
     val rowBackground = when {
-        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.Error, 0.42f)
-        attentionWindow -> DarkTokens.SurfaceVariant.glowTint(labelAccent, 0.48f)
+        actionRequired -> DarkTokens.SurfaceVariant.glowTint(DarkTokens.Error, 0.32f)
+        attentionWindow -> DarkTokens.SurfaceVariant.glowTint(labelAccent, 0.36f)
         else -> DarkTokens.Surface.copy(alpha = 0.72f)
     }
     val openCardKey = ActionParameters.Key<String>(

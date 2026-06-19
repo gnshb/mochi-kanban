@@ -56,7 +56,7 @@ data class CardEntity(
     fun isAttentionWindow(now: Long): Boolean {
         val start = startUtc ?: return false
         val end = endUtc() ?: return false
-        return column != Column.DONE && now >= start - ATTENTION_LEAD_MS && now < end
+        return column != Column.DONE && now >= start && now < end
     }
 
     fun isActionRequired(now: Long): Boolean {
@@ -91,7 +91,7 @@ data class CardEntity(
         if (column == Column.DONE) return null
         val start = startUtc ?: return null
         val end = endUtc() ?: return null
-        return listOf(start - ATTENTION_LEAD_MS, start, end)
+        return listOf(start, end)
             .filter { it > now }
             .minOrNull()
     }
@@ -124,8 +124,4 @@ data class CardEntity(
         calendarId = calendarId,
         remoteEventId = remoteEventId,
     )
-
-    companion object {
-        const val ATTENTION_LEAD_MS = 60L * 60 * 1000
-    }
 }

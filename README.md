@@ -46,6 +46,13 @@ local-only board. Release signing reads `keystore.properties` (see
 
 ## Changelog
 
+### v0.1.7
+
+- Start active glows only when a timed card actually starts, not one hour early.
+- Slightly reduce the active/overdue glow strength in the app and widget.
+- Force widget refreshes after label edits and calendar sync worker runs.
+- Make the widget body/list empty space open the app when tapped.
+
 ### v0.1.6
 
 - Keep active timed cards visible and glowing in the widget To do list until their scheduled end.

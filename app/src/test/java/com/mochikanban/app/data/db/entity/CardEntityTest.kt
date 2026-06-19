@@ -31,13 +31,14 @@ class CardEntityTest {
     }
 
     @Test
-    fun leadWindowStartsOneHourBeforeTaskStart() {
+    fun attentionWindowStartsAtTaskStart() {
         val start = 10_000_000L
         val card = card(startUtc = start, durationMin = 30)
 
-        assertFalse(card.isAttentionWindow(start - CardEntity.ATTENTION_LEAD_MS - 1))
-        assertTrue(card.isAttentionWindow(start - CardEntity.ATTENTION_LEAD_MS))
+        assertFalse(card.isAttentionWindow(start - 1))
+        assertTrue(card.isAttentionWindow(start))
         assertTrue(card.isAttentionWindow(start + 10_000L))
+        assertFalse(card.isAttentionWindow(card.endUtc()!!))
     }
 
     @Test
